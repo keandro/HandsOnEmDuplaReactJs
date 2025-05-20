@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/HandsOnEmDuplaReactJs/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
