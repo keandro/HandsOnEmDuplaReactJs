@@ -19,13 +19,21 @@ const AdminCreateProductPage = () => {
         category_id: ''
     });
 
-    const [errors, setErrors] = useState({});
-
-    // Buscar categorias
-    const { data: categories, isLoading: loadingCategories } = useQuery({
+    const [errors, setErrors] = useState({});    // Buscar categorias
+    const { data: categories, isLoading: loadingCategories, error: categoriesError } = useQuery({
         queryKey: ['categories'],
-        queryFn: () => categoryService.getAllCategories(),
+        queryFn: async () => {
+            try {
+                const data = await categoryService.getAllCategories();
+                console.log("Categorias carregadas:", data);
+                return data || [];
+            } catch (error) {
+                console.error("Erro ao carregar categorias:", error);
+                throw error;
+            }
+        },
         onError: (error) => {
+            console.error("Erro na query de categorias:", error);
             toast.error(`Erro ao carregar categorias: ${error.message}`, { icon: '❌' });
         }
     });
@@ -147,9 +155,18 @@ const AdminCreateProductPage = () => {
                                     value={product.description}
                                     onChange={handleChange}></textarea>
                                 {errors.description && <div className="invalid-feedback">{errors.description}</div>}
-                            </div>
-                            <div className="mb-3">
-                                <label htmlFor="category_id" className="form-label">Categoria</label>
+                            </div>                            <div className="mb-3">
+                                <div className="d-flex justify-content-between align-items-center mb-1">
+                                    <label htmlFor="category_id" className="form-label mb-0">Categoria</label>
+                                    <button 
+                                        type="button"
+                                        className="btn btn-sm btn-outline-primary"
+                                        onClick={() => navigate('/admin/categories')}
+                                    >
+                                        <i className="bi bi-plus-circle me-1"></i>
+                                        Gerenciar Categorias
+                                    </button>
+                                </div>
                                 <select
                                     className={`form-select ${errors.category_id ? 'is-invalid' : ''}`}
                                     id="category_id"
@@ -157,18 +174,32 @@ const AdminCreateProductPage = () => {
                                     value={product.category_id}
                                     onChange={handleChange}
                                     disabled={loadingCategories}>
-                                    <option value="">Selecione uma categoria...</option>
-                                    {categories?.map(category => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </option>
-                                    ))}
+                                    <option value="">Selecione uma categoria...</option>{categories && categories.length > 0 ? (
+                                        categories.map(category => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option value="" disabled>Nenhuma categoria disponível</option>
+                                    )}
                                 </select>
-                                {errors.category_id && <div className="invalid-feedback">{errors.category_id}</div>}
-                                {loadingCategories && 
+                                {errors.category_id && <div className="invalid-feedback">{errors.category_id}</div>}                                {loadingCategories && 
                                     <div className="form-text">
                                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                         Carregando categorias...
+                                    </div>
+                                }
+                                {categoriesError && 
+                                    <div className="form-text text-danger">
+                                        <i className="bi bi-exclamation-triangle me-1"></i>
+                                        Erro ao carregar categorias: {categoriesError.message}
+                                    </div>
+                                }
+                                {!loadingCategories && !categoriesError && categories?.length === 0 && 
+                                    <div className="form-text">
+                                        <i className="bi bi-info-circle me-1"></i>
+                                        Não há categorias cadastradas. <a href="/admin/categories">Criar categorias</a>
                                     </div>
                                 }
                             </div>

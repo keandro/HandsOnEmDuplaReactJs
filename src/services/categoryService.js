@@ -20,17 +20,24 @@ const categoryService = {
       totalPages: Math.ceil(count / limit)
     };
   },
-  
-  async getAllCategories() {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true });
-    if (error) {
-      console.error('Erro ao buscar todas as categorias:', error);
+    async getAllCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
+        
+      if (error) {
+        console.error('Erro ao buscar todas as categorias:', error);
+        throw error;
+      }
+      
+      console.log('Categorias retornadas do serviço:', data);
+      return data || [];
+    } catch (error) {
+      console.error('Exceção ao buscar todas as categorias:', error);
       throw error;
     }
-    return data;
   },
   
   async getCategoryById(id) {

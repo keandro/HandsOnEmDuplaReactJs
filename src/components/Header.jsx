@@ -70,11 +70,11 @@ const Header = ({ cartCount = 0 }) => {
                       style={{ width: 32, height: 32, objectFit: 'cover' }}
                     />
                   </a>
-                  <ul className="dropdown-menu dropdown-menu-end">
-                    {isAdmin && (
+                  <ul className="dropdown-menu dropdown-menu-end">                    {isAdmin && (
                       <>
                         <li><Link className="dropdown-item" to="/admin/users">Usuários</Link></li>
                         <li><Link className="dropdown-item" to="/admin/products">Produtos</Link></li>
+                        <li><Link className="dropdown-item" to="/admin/categories">Categorias</Link></li>
                         <li><hr className="dropdown-divider" /></li>
                       </>
                     )}
