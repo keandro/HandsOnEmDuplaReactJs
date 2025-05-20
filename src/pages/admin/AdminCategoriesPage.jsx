@@ -1,28 +1,26 @@
-// src/pages/admin/AdminProductsPage.jsx
 import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import productService from '@services/productService';
-import { formatPrice } from '@assets/js/util.js';
+import categoryService from '@services/categoryService';
 import Pagination from '@components/Pagination';
 
-const PRODUCTS_PER_PAGE = 8;
+const CATEGORIES_PER_PAGE = 8;
 
-const AdminProductsPage = () => {
+const AdminCategoriesPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const queryClient = useQueryClient();
     const navigate = useNavigate();
 
-    // Lista de produtos
+    // Lista de categorias
     const {
         data,
-        isLoading: loadingProducts,
+        isLoading: loadingCategories,
         isError,
         error,
     } = useQuery({
-        queryKey: ['products', currentPage],
-        queryFn: () => productService.getProductsByPage(currentPage, PRODUCTS_PER_PAGE),
+        queryKey: ['categories', currentPage],
+        queryFn: () => categoryService.getCategoriesByPage(currentPage, CATEGORIES_PER_PAGE),
         keepPreviousData: true,
     });    
 
@@ -33,32 +31,32 @@ const AdminProductsPage = () => {
         window.scrollTo(0, 0);
     };
 
-    // Mutação para excluir produto
+    // Mutação para excluir categoria
     const deleteMutation = useMutation({
-        mutationFn: productService.deleteProduct,
+        mutationFn: categoryService.deleteCategory,
         onSuccess: () => {
-            toast.success('Produto excluído', { icon: '🗑️' });
-            queryClient.invalidateQueries(['products']);
+            toast.success('Categoria excluída', { icon: '🗑️' });
+            queryClient.invalidateQueries(['categories']);
         },
         onError: (err) => toast.error(`Erro: ${err.message}`, { icon: '❌' }),
     });
 
-    // Função para excluir produto
+    // Função para excluir categoria
     const handleDelete = (id) => {
-        if (window.confirm('Excluir produto? Esta ação é irreversível.')) {
+        if (window.confirm('Excluir categoria? Esta ação é irreversível.')) {
             deleteMutation.mutate(id);
         }
     };
 
-    // Função para editar produto
-    const handleEdit = (product) => {
-        navigate(`/admin/products/edit/${product.id}`, { state: { product } });
+    // Função para editar categoria
+    const handleEdit = (category) => {
+        navigate(`/admin/categories/edit/${category.id}`, { state: { category } });
     };
 
     if (isError) {
         return (
             <div className="alert alert-danger mt-4">
-                Erro ao carregar produtos: {error.message}
+                Erro ao carregar categorias: {error.message}
             </div>
         );
     }
@@ -68,15 +66,15 @@ const AdminProductsPage = () => {
             <div className="col-12 mb-3">
                 <div className="card">
                     <div className="card-header text-bg-light d-flex justify-content-between align-items-center py-3">
-                        <h2 className="mb-0">Produtos</h2>
+                        <h2 className="mb-0">Categorias</h2>
                         <button
                             className="btn btn-success"
-                            onClick={() => navigate('/admin/products/new')}>
-                            Adicionar Produto
+                            onClick={() => navigate('/admin/categories/new')}>
+                            Adicionar Categoria
                         </button>
                     </div>
                     <div className="card-body p-0">
-                        {loadingProducts ? (
+                        {loadingCategories ? (
                             <div className="text-center my-5">
                                 <div className="spinner-border" role="status"></div>
                             </div>
@@ -85,42 +83,32 @@ const AdminProductsPage = () => {
                                 <table className="table table-striped align-middle mb-0">
                                     <thead className="table-dark">
                                         <tr>
-                                            <th className="one-line-cell">Foto</th>
                                             <th>Nome</th>
-                                            <th>Categoria</th>
-                                            <th>Preço</th>
+                                            <th>Descrição</th>
                                             <th className="text-center">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {data?.products?.length === 0 && (
+                                        {data?.categories?.length === 0 && (
                                             <tr>
-                                                <td colSpan={5} className="text-center py-4">
-                                                    Nenhum produto encontrado.
+                                                <td colSpan={3} className="text-center py-4">
+                                                    Nenhuma categoria encontrada.
                                                 </td>
                                             </tr>
                                         )}
-                                        {data?.products && data.products.map((product) => (
-                                            <tr key={product.id}>
-                                                <td className="one-line-cell px-3">
-                                                    <img
-                                                        src={product.image_url}
-                                                        alt={product.title}
-                                                        className="rounded"
-                                                        style={{ width: 'auto', height: '60px', }} />
-                                                </td>
-                                                <td>{product.title}</td>
-                                                <td>{product.categories?.name || '—'}</td>
-                                                <td className="one-line-cell">{formatPrice(product.price)}</td>
+                                        {data?.categories && data.categories.map((category) => (
+                                            <tr key={category.id}>
+                                                <td>{category.name}</td>
+                                                <td>{category.description || '—'}</td>
                                                 <td className="text-center one-line-cell px-3">
                                                     <button
                                                         className="btn btn-sm btn-outline-warning me-2"
-                                                        onClick={() => handleEdit(product)}>
+                                                        onClick={() => handleEdit(category)}>
                                                         Alterar
                                                     </button>
                                                     <button
                                                         className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => handleDelete(product.id)}>
+                                                        onClick={() => handleDelete(category.id)}>
                                                         Excluir
                                                     </button>
                                                 </td>
@@ -150,4 +138,4 @@ const AdminProductsPage = () => {
     );
 };
 
-export default AdminProductsPage;
+export default AdminCategoriesPage; 

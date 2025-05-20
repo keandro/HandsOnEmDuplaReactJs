@@ -1,26 +1,34 @@
 // src/pages/admin/AdminCreateProductPage.jsx
-import { useState, useEffect, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import productService from '@services/productService';
+import categoryService from '@services/categoryService';
 
 const AdminCreateProductPage = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
     const queryClient = useQueryClient();
     const productToEdit = state?.product;
-    const fileRef = useRef(null);
     const [product, setProduct] = useState({
         title: '',
         description: '',
         price: '',
-        image_file: null,
-        image_preview: '',
-        image_url: ''
+        image_url: '',
+        category_id: ''
     });
 
     const [errors, setErrors] = useState({});
+
+    // Buscar categorias
+    const { data: categories, isLoading: loadingCategories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: () => categoryService.getAllCategories(),
+        onError: (error) => {
+            toast.error(`Erro ao carregar categorias: ${error.message}`, { icon: '❌' });
+        }
+    });
 
     // Se for um produto para editar, inicializa o estado com os dados do produto
     useEffect(() => {
@@ -29,7 +37,8 @@ const AdminCreateProductPage = () => {
                 title: productToEdit.title,
                 description: productToEdit.description,
                 price: productToEdit.price,
-                image_url: productToEdit.image_url
+                image_url: productToEdit.image_url,
+                category_id: productToEdit.category_id || ''
             });
         }
     }, [productToEdit]);
@@ -68,12 +77,6 @@ const AdminCreateProductPage = () => {
         }
     };
 
-    const handleFileSelect = e => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setProduct(p => ({ ...p, image_file: file, image_preview: URL.createObjectURL(file), image_url: '' }));
-    };
-
     const validateForm = () => {
         const newErrors = {};
         if (!product.title.trim()) {
@@ -87,8 +90,11 @@ const AdminCreateProductPage = () => {
         } else if (isNaN(Number(product.price)) || Number(product.price) <= 0) {
             newErrors.price = 'O preço deve ser um número positivo';
         }
-        if (!product.image_file && !product.image_url) {
-            newErrors.image_file = 'Selecione uma foto';
+        if (!product.image_url.trim()) {
+            newErrors.image_url = 'A URL da imagem é obrigatória';
+        }
+        if (!product.category_id) {
+            newErrors.category_id = 'Selecione uma categoria';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -99,14 +105,7 @@ const AdminCreateProductPage = () => {
         if (!validateForm()) return;
 
         try {
-            let path = product.image_url;
-            if (product.image_file) {
-                path = await productService.uploadImage(product.image_file);
-            }
-
-            const payload = { ...product, image_url: path, price: parseFloat(product.price) };
-            delete payload.image_file;
-            delete payload.image_preview;
+            const payload = { ...product, price: parseFloat(product.price) };
 
             if (productToEdit) {
                 await updateProductMutation.mutateAsync({ id: productToEdit.id, ...payload });
@@ -150,6 +149,30 @@ const AdminCreateProductPage = () => {
                                 {errors.description && <div className="invalid-feedback">{errors.description}</div>}
                             </div>
                             <div className="mb-3">
+                                <label htmlFor="category_id" className="form-label">Categoria</label>
+                                <select
+                                    className={`form-select ${errors.category_id ? 'is-invalid' : ''}`}
+                                    id="category_id"
+                                    name="category_id"
+                                    value={product.category_id}
+                                    onChange={handleChange}
+                                    disabled={loadingCategories}>
+                                    <option value="">Selecione uma categoria...</option>
+                                    {categories?.map(category => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.category_id && <div className="invalid-feedback">{errors.category_id}</div>}
+                                {loadingCategories && 
+                                    <div className="form-text">
+                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Carregando categorias...
+                                    </div>
+                                }
+                            </div>
+                            <div className="mb-3">
                                 <label htmlFor="price" className="form-label">Preço (R$)</label>
                                 <input
                                     type="number"
@@ -162,22 +185,38 @@ const AdminCreateProductPage = () => {
                                 {errors.price && <div className="invalid-feedback">{errors.price}</div>}
                             </div>
                             <div className="mb-3">
-                                <label className="form-label">Foto do produto</label><br />
-                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => fileRef.current?.click()}>
-                                    Selecionar arquivo
-                                </button>
-                                <input type="file" accept="image/*" className="d-none" ref={fileRef} onChange={handleFileSelect} />
+                                <label htmlFor="image_url" className="form-label">URL da Imagem</label>
+                                <input
+                                    type="url"
+                                    className={`form-control ${errors.image_url ? 'is-invalid' : ''}`}
+                                    id="image_url"
+                                    name="image_url"
+                                    placeholder="https://exemplo.com/imagem.jpg"
+                                    value={product.image_url}
+                                    onChange={handleChange} />
+                                {errors.image_url && <div className="invalid-feedback">{errors.image_url}</div>}
+                                <div className="form-text">
+                                    Insira a URL completa de uma imagem disponível na internet
+                                </div>
                             </div>
 
-                            {product.image_preview || product.image_url ? (
+                            {product.image_url && (
                                 <div className="mb-3 text-start">
-                                    <img
-                                        src={product.image_preview || product.image_url}
-                                        alt="Pré-visualização"
-                                        className="img-thumbnail"
-                                        style={{ maxHeight: 200 }}/>
+                                    <label className="form-label">Pré-visualização</label>
+                                    <div>
+                                        <img
+                                            src={product.image_url}
+                                            alt="Pré-visualização"
+                                            className="img-thumbnail"
+                                            style={{ maxHeight: 200 }}
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = 'https://placehold.co/400x300?text=Imagem+Inválida';
+                                            }}
+                                        />
+                                    </div>
                                 </div>
-                            ) : null}
+                            )}
 
                             <div className="d-flex">
                                 <button
