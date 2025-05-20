@@ -27,5 +27,17 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "vite": "^6.2.0"
-  }
+  },
+  "description": "Este projeto contém o código-fonte e a documentação para um curso prático de ReactJS, onde desenvolvemos uma aplicação de loja virtual com várias funcionalidades modernas.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keandro/HandsOnEmDuplaReactJs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/keandro/HandsOnEmDuplaReactJs/issues"
+  },
+  "homepage": "https://github.com/keandro/HandsOnEmDuplaReactJs#readme"
 }
